@@ -4,10 +4,12 @@ import (
 	"flag"
 	"log"
 	"os"
+	"runtime"
 )
 
 var (
-	certFilePath string
+	certFilePath  string
+	maxGoroutines int = 1
 )
 
 func main() {
@@ -15,6 +17,8 @@ func main() {
 
 	flag.StringVar(&certFilePath, "o", "", "要加载的证书文件路径。")
 	flag.Parse()
+
+	maxGoroutines = runtime.NumCPU()
 
 	if len(certFilePath) == 0 {
 		log.Println("错误：证书文件路径不能为空。")
