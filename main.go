@@ -15,7 +15,7 @@ var (
 func main() {
 	log.Println("SSLCertificateSplittingTool v0.0.1")
 
-	flag.StringVar(&certFilePath, "o", "", "要加载的证书文件路径。")
+	flag.StringVar(&certFilePath, "i", "", "要加载的证书文件路径。")
 	flag.Parse()
 
 	maxGoroutines = runtime.NumCPU()
