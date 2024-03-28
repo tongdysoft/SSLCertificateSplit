@@ -151,50 +151,70 @@ func findRootCert() *x509.Certificate {
 // 返回正確的證書鏈順序作為整數陣列
 func sortCertificates() {
 	// var order []int
+	var x509xIndex []int = []int{}
 	var rootCert *x509.Certificate = findRootCert()
-
-	// fmt.Println("order", order)
-	// for i, o := range order {
-	// 	var cert = x509s[o]
-	// 	var subso = "└─"
-	// 	if i == 0 {
-	// 		subso = ""
-	// 	}
-	// 	fmt.Println(strings.Repeat("  ", i)+subso, cert.Subject)
-	// }
+	var endSub string = bytesMD5(rootCert.RawSubject) //bytesMD5(rootCert.RawSubject)
+	for {
+		for i, cert := range x509s {
+			if bytesMD5(cert.RawIssuer) == endSub {
+				if bytesMD5(cert.RawIssuer) == bytesMD5(cert.RawSubject) {
+					if len(x509xIndex) == 0 {
+						x509xIndex = append(x509xIndex, i)
+					}
+				} else {
+					x509xIndex = append(x509xIndex, i)
+					endSub = bytesMD5(cert.RawSubject)
+					break
+				}
+			}
+		}
+		if len(x509xIndex) == len(x509s) {
+			break
+		}
+	}
+	fmt.Println("证书链:")
+	for i, d := range x509xIndex {
+		var cert = x509s[d]
+		var subso = "└─"
+		if i == 0 {
+			subso = ""
+		}
+		fmt.Println(i, strings.Repeat("  ", i)+subso, cert.Subject)
+	}
 }
 
 func bytesMD5(b []byte) string {
 	return fmt.Sprintf("%x", md5.Sum(b))
 }
 
-func viewCertInfo() bool {
-
+func viewCertInfo() {
+	if !verbose {
+		return
+	}
 	for i, cert := range x509s {
 		fmt.Println("\n", lineStr, "证书", i+1, "/", len(x509s), lineStr)
-		// 	// fmt.Printf("版本: %d\n", cert.Version)
-		// 	// fmt.Printf("序列号: %d\n", cert.SerialNumber)
-		// 	// fmt.Printf("签名算法: %s\n", cert.SignatureAlgorithm)
+		fmt.Printf("版本: %d\n", cert.Version)
+		fmt.Printf("序列号: %d\n", cert.SerialNumber)
+		fmt.Printf("签名算法: %s\n", cert.SignatureAlgorithm)
 		fmt.Printf("颁发者(%s): %s\n", bytesMD5(cert.RawIssuer), cert.Issuer)
 		fmt.Printf("使用者(%s): %s\n", bytesMD5(cert.RawSubject), cert.Subject)
-		// 	// fmt.Printf("有效期开始时间: %s\n", cert.NotBefore)
-		// 	// fmt.Printf("有效期结束时间: %s\n", cert.NotAfter)
-		// 	// fmt.Printf("公钥算法: %s\n", cert.PublicKeyAlgorithm)
-		// 	// fmt.Printf("签名: %x\n", cert.Signature)
-		// 	// fmt.Printf("是否是CA证书: %v\n", cert.IsCA)
-		// 	// fmt.Printf("最大路径长度: %d\n", cert.MaxPathLen)
-		// 	// fmt.Printf("主题密钥标识符: %x\n", cert.SubjectKeyId)
-		// 	// fmt.Printf("授权密钥标识符: %x\n", cert.AuthorityKeyId)
-		// 	// fmt.Printf("密钥用途: %v\n", cert.KeyUsage)
-		// 	// fmt.Printf("扩展密钥用途: %v\n", cert.ExtKeyUsage)
-		// 	// fmt.Printf("基本约束: %t\n", cert.BasicConstraintsValid)
-		// 	// fmt.Printf("DNS名称: %v\n", cert.DNSNames)
-		// 	// fmt.Printf("电子邮件地址: %v\n", cert.EmailAddresses)
-		// 	// fmt.Printf("IP地址: %v\n", cert.IPAddresses)
-		// 	// fmt.Printf("URI: %v\n", cert.URIs)
-		// 	// fmt.Printf("CRL分发点: %v\n", cert.CRLDistributionPoints)
-		// 	// fmt.Printf("OCSP服务器: %v\n", cert.OCSPServer)
-		// 	// fmt.Printf("证书策略: %v\n", cert.PolicyIdentifiers)
+		fmt.Printf("有效期开始时间: %s\n", cert.NotBefore)
+		fmt.Printf("有效期结束时间: %s\n", cert.NotAfter)
+		fmt.Printf("公钥算法: %s\n", cert.PublicKeyAlgorithm)
+		fmt.Printf("签名: %x\n", cert.Signature)
+		fmt.Printf("是否是CA证书: %v\n", cert.IsCA)
+		fmt.Printf("最大路径长度: %d\n", cert.MaxPathLen)
+		fmt.Printf("主题密钥标识符: %x\n", cert.SubjectKeyId)
+		fmt.Printf("授权密钥标识符: %x\n", cert.AuthorityKeyId)
+		fmt.Printf("密钥用途: %v\n", cert.KeyUsage)
+		fmt.Printf("扩展密钥用途: %v\n", cert.ExtKeyUsage)
+		fmt.Printf("基本约束: %t\n", cert.BasicConstraintsValid)
+		fmt.Printf("DNS名称: %v\n", cert.DNSNames)
+		fmt.Printf("电子邮件地址: %v\n", cert.EmailAddresses)
+		fmt.Printf("IP地址: %v\n", cert.IPAddresses)
+		fmt.Printf("URI: %v\n", cert.URIs)
+		fmt.Printf("CRL分发点: %v\n", cert.CRLDistributionPoints)
+		fmt.Printf("OCSP服务器: %v\n", cert.OCSPServer)
+		fmt.Printf("证书策略: %v\n", cert.PolicyIdentifiers)
 	}
-	return true
 }
