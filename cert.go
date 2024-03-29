@@ -29,7 +29,7 @@ func loadCertFile() bool {
 	splitPEMCerts(certPEM)
 	var numOK [2]int8 = parseCertificates()
 	log.Println("文件包含证书数:", numOK[0]+numOK[1], " 有效证书数:", numOK[0], " 无效证书数:", numOK[1])
-	sortCertificates()
+	processCertificates()
 	viewCertInfo()
 	return true
 }
@@ -136,7 +136,7 @@ func findRootCert() *x509.Certificate {
 			if err != nil {
 				for _, cert := range x509s {
 					if cert.Subject.String() == cn {
-						fmt.Println("根证书:", cert.Subject, "\n    颁发者:", cert.Issuer, "\n    使用者:", cert.Subject)
+						log.Println("根证书:\n    颁发者:", cert.Issuer, "\n    使用者:", cert.Subject)
 						return cert
 					}
 				}
@@ -148,13 +148,66 @@ func findRootCert() *x509.Certificate {
 	return x509s[0]
 }
 
+// 開始處理證書
+func processCertificates() {
+	var isOk bool = false
+	var x509xIndex []int
+	var oldLen int
+	for i, cert := range x509s {
+		isOkN, x509xIndexN := sortCertificates(cert)
+		// fmt.Println("证书顺序:", i, isOkN, x509xIndexN)
+		if i == 0 || len(x509xIndexN) > oldLen {
+			oldLen = len(x509xIndexN)
+			x509xIndex = x509xIndexN
+			isOk = isOkN
+		}
+	}
+	if !isOk {
+		log.Println("警告：证书文件不构成完整链。")
+	}
+	log.Println("证书链:")
+	for i, d := range x509xIndex {
+		var cert = x509s[d]
+		var subso = "└─"
+		if i == 0 {
+			subso = ""
+		}
+		fmt.Println(i, strings.Repeat("  ", i)+subso, cert.Subject)
+	}
+	var unreferenced []*x509.Certificate = findUnreferencedCerts(x509s, x509xIndex)
+	if len(unreferenced) > 0 {
+		log.Println("警告：未链接的证书:")
+		for i, cert := range unreferenced {
+			fmt.Println(i, cert.Subject)
+		}
+	}
+}
+
+// 返回 certs 中未被 indexes 引用的元素
+func findUnreferencedCerts(certs []*x509.Certificate, indexes []int) []*x509.Certificate {
+	indexMap := make(map[int]bool)
+	for _, index := range indexes {
+		indexMap[index] = true
+	}
+
+	var unreferenced []*x509.Certificate
+	for i, certs := range certs {
+		if _, found := indexMap[i]; !found {
+			unreferenced = append(unreferenced, certs)
+		}
+	}
+
+	return unreferenced
+}
+
 // 返回正確的證書鏈順序作為整數陣列
-func sortCertificates() {
+func sortCertificates(rootCert *x509.Certificate) (bool, []int) {
 	// var order []int
 	var x509xIndex []int = []int{}
-	var rootCert *x509.Certificate = findRootCert()
+	var isOK bool = true
 	var endSub string = bytesMD5(rootCert.RawSubject) //bytesMD5(rootCert.RawSubject)
-	for {
+	var forMax = len(x509s) + 1
+	for m := 0; m < forMax; m++ {
 		for i, cert := range x509s {
 			if bytesMD5(cert.RawIssuer) == endSub {
 				if bytesMD5(cert.RawIssuer) == bytesMD5(cert.RawSubject) {
@@ -171,16 +224,11 @@ func sortCertificates() {
 		if len(x509xIndex) == len(x509s) {
 			break
 		}
-	}
-	fmt.Println("证书链:")
-	for i, d := range x509xIndex {
-		var cert = x509s[d]
-		var subso = "└─"
-		if i == 0 {
-			subso = ""
+		if m >= len(x509s) {
+			isOK = false
 		}
-		fmt.Println(i, strings.Repeat("  ", i)+subso, cert.Subject)
 	}
+	return isOK, x509xIndex
 }
 
 func bytesMD5(b []byte) string {
