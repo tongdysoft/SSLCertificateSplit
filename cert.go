@@ -1,12 +1,10 @@
 package main
 
 import (
-	"crypto/md5"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -16,7 +14,7 @@ var (
 	blocks  []*pem.Block        = []*pem.Block{}
 	x509s   []*x509.Certificate = []*x509.Certificate{}
 	lineStr string              = "----------"
-	order   []int               = []int{}
+	// order   []int               = []int{}
 )
 
 // 讀取證書檔案
@@ -28,7 +26,15 @@ func loadCertFile() bool {
 	}
 	splitPEMCerts(certPEM)
 	var numOK [2]int8 = parseCertificates()
-	log.Println("文件包含证书数:", numOK[0]+numOK[1], " 有效证书数:", numOK[0], " 无效证书数:", numOK[1])
+	if numOK[0] == 0 {
+		log.Println("错误：未找到有效的证书。")
+		return false
+	}
+	var totalLen int = 0
+	for _, c := range certs {
+		totalLen += len(c)
+	}
+	log.Println("文件包含证书数:", numOK[0]+numOK[1], " 有效证书数:", numOK[0], " 无效证书数:", numOK[1], " 总字节数:", totalLen)
 	processCertificates()
 	viewCertInfo()
 	return true
@@ -45,7 +51,7 @@ func splitPEMCerts(certChain []byte) [2]int8 {
 		}
 		if block.Type != "CERTIFICATE" {
 			r[1]++
-			log.Println("错误：未知的PEM块类型:", block.Type)
+			log.Println("错误：未知或不正确的 PEM 块类型:", block.Type)
 		}
 		// 將證書編碼回 PEM 格式並新增到切片中
 		certPEM := pem.EncodeToMemory(block)
@@ -78,76 +84,6 @@ func parseCertificates() [2]int8 {
 	return r
 }
 
-// 從字串切片中刪除重複的字串
-func uniqueStrings(strings []string) []string {
-	// 建立一個對映來記錄每個字串出現的次數
-	countMap := make(map[string]int)
-	for _, str := range strings {
-		countMap[str]++
-	}
-	// 建立一個空切片來儲存沒有重複的字串
-	var unique []string
-	for str, count := range countMap {
-		// 如果某個字串的出現次數為 1 ，那麼它就是沒有重複的，加入到結果切片中
-		if count == 1 {
-			unique = append(unique, str)
-		}
-	}
-	return unique
-}
-
-// 查詢根證書
-func findRootCert() *x509.Certificate {
-	for _, cert := range x509s {
-		if bytesMD5(cert.RawIssuer) == bytesMD5(cert.RawSubject) {
-			fmt.Println("根证书:", cert.Subject, "\n    颁发者&使用者:", cert.Issuer)
-			return cert
-		}
-	}
-	log.Println("警告：没有找到根证书，尝试使用第一个 CA 证书作为根证书。")
-	var allCNs []string = make([]string, len(x509s)) //*2
-	for i, cert := range x509s {
-		allCNs[i] = bytesMD5(cert.RawSubject)
-		// allCNs[i+len(x509s)] = bytesMD5(cert.RawIssuer)
-	}
-	allCNs = uniqueStrings(allCNs)
-	var allCNcert []*x509.Certificate = []*x509.Certificate{}
-	for i, ac := range allCNs {
-		for _, cert := range x509s {
-			if bytesMD5(cert.RawSubject) == ac {
-				allCNcert = append(allCNcert, cert)
-				allCNs[i] = cert.Subject.String()
-			}
-		}
-	}
-	for _, cert := range allCNcert {
-		if cert.IsCA {
-			fmt.Println("根证书:", cert.Subject, "\n    颁发者:", cert.Issuer, "\n    使用者:", cert.Subject)
-			return cert
-		}
-	}
-	log.Println("警告：没有找到 CA 证书，尝试使用使用者不具有域名的第一个不重复证书作为根证书。")
-	for _, cn := range allCNs {
-		fmt.Println(cn)
-		var host string = strings.Split(cn, "=")[1]
-		var hosts []string = strings.Split(host, ",")
-		for _, host := range hosts {
-			_, err := url.Parse(host)
-			if err != nil {
-				for _, cert := range x509s {
-					if cert.Subject.String() == cn {
-						log.Println("根证书:\n    颁发者:", cert.Issuer, "\n    使用者:", cert.Subject)
-						return cert
-					}
-				}
-			}
-		}
-	}
-	log.Println("警告：没有找到 CA 证书，尝试使用第一个证书作为根证书。")
-	fmt.Println("根证书:", x509s[0].Subject, "\n    颁发者:", x509s[0].Issuer, "\n    使用者:", x509s[0].Subject)
-	return x509s[0]
-}
-
 // 開始處理證書
 func processCertificates() {
 	var isOk bool = false
@@ -167,12 +103,12 @@ func processCertificates() {
 	}
 	log.Println("证书链:")
 	for i, d := range x509xIndex {
-		var cert = x509s[d]
-		var subso = "└─"
+		var cert *x509.Certificate = x509s[d]
+		var subso string = "└─"
 		if i == 0 {
 			subso = ""
 		}
-		fmt.Println(i, strings.Repeat("  ", i)+subso, cert.Subject)
+		fmt.Printf("[%d] %s%s %s (%d B)\n", i, strings.Repeat("  ", i), subso, cert.Subject, len(certs[d]))
 	}
 	var unreferenced []*x509.Certificate = findUnreferencedCerts(x509s, x509xIndex)
 	if len(unreferenced) > 0 {
@@ -181,58 +117,41 @@ func processCertificates() {
 			fmt.Println(i, cert.Subject)
 		}
 	}
-}
 
-// 返回 certs 中未被 indexes 引用的元素
-func findUnreferencedCerts(certs []*x509.Certificate, indexes []int) []*x509.Certificate {
-	indexMap := make(map[int]bool)
-	for _, index := range indexes {
-		indexMap[index] = true
-	}
+	for i, d := range x509xIndex {
+		var cert *x509.Certificate = x509s[d]
+		var subjects []string = strings.Split(cert.Subject.String(), ",")
+		for _, subject := range subjects {
+			if len(subject) <= 3 {
+				continue
+			}
+			var subjectInfos []string = strings.Split(subject, "=")
 
-	var unreferenced []*x509.Certificate
-	for i, certs := range certs {
-		if _, found := indexMap[i]; !found {
-			unreferenced = append(unreferenced, certs)
-		}
-	}
-
-	return unreferenced
-}
-
-// 返回正確的證書鏈順序作為整數陣列
-func sortCertificates(rootCert *x509.Certificate) (bool, []int) {
-	// var order []int
-	var x509xIndex []int = []int{}
-	var isOK bool = true
-	var endSub string = bytesMD5(rootCert.RawSubject) //bytesMD5(rootCert.RawSubject)
-	var forMax = len(x509s) + 1
-	for m := 0; m < forMax; m++ {
-		for i, cert := range x509s {
-			if bytesMD5(cert.RawIssuer) == endSub {
-				if bytesMD5(cert.RawIssuer) == bytesMD5(cert.RawSubject) {
-					if len(x509xIndex) == 0 {
-						x509xIndex = append(x509xIndex, i)
+			if len(outputDir) > 0 {
+				if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+					err := os.Mkdir(outputDir, 0755)
+					if err != nil {
+						fmt.Println("错误：创建文件夹失败:", outputDir, err)
+						return
 					}
-				} else {
-					x509xIndex = append(x509xIndex, i)
-					endSub = bytesMD5(cert.RawSubject)
-					break
 				}
 			}
-		}
-		if len(x509xIndex) == len(x509s) {
-			break
-		}
-		if m >= len(x509s) {
-			isOK = false
+
+			if subjectInfos[0] == "CN" {
+				var fileName string = fmt.Sprintf("%s/%d-%s.pem", outputDir, i, strings.ReplaceAll(subjectInfos[1], " ", "_"))
+				var info string = fmt.Sprintf("%s (%d B)", fileName, len(certs[d]))
+				if len(outputDir) > 0 {
+					err := os.WriteFile(fileName, certs[d], 0644)
+					if err != nil {
+						log.Printf("错误：写入证书文件 %d: %s 失败: %v\n", i, info, err)
+					} else {
+						log.Printf("已写入证书文件 %d: %s\n", i, info)
+					}
+				}
+				break
+			}
 		}
 	}
-	return isOK, x509xIndex
-}
-
-func bytesMD5(b []byte) string {
-	return fmt.Sprintf("%x", md5.Sum(b))
 }
 
 func viewCertInfo() {
