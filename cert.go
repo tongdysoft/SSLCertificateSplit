@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -15,6 +16,7 @@ var (
 	x509s   []*x509.Certificate = []*x509.Certificate{}
 	lineStr string              = "----------"
 	// order   []int               = []int{}
+	x509xIndex []int
 )
 
 // 讀取證書檔案
@@ -87,7 +89,6 @@ func parseCertificates() [2]int8 {
 // 開始處理證書
 func processCertificates() {
 	var isOk bool = false
-	var x509xIndex []int
 	var oldLen int
 	for i, cert := range x509s {
 		isOkN, x509xIndexN := sortCertificates(cert)
@@ -118,6 +119,17 @@ func processCertificates() {
 		}
 	}
 
+	if exitPause {
+		fmt.Println("按回车键保存拆分后的证书文件；按 Ctrl+C 退出。")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		saveSubCertFile()
+	} else {
+		saveSubCertFile()
+	}
+
+}
+
+func saveSubCertFile() {
 	for i, d := range x509xIndex {
 		var cert *x509.Certificate = x509s[d]
 		var subjects []string = strings.Split(cert.Subject.String(), ",")
