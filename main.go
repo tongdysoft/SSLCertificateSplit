@@ -1,3 +1,4 @@
+//go:generate goversioninfo -icon=ico/icon.ico -manifest=main.exe.manifest -arm=true
 package main
 
 import (
@@ -21,7 +22,7 @@ func main() {
 	log.Println("https://github.com/tongdysoft/SSLCertificateSplittingTool")
 
 	flag.StringVar(&certFilePath, "i", "", "要加载的 X509 证书文件路径。")
-	flag.StringVar(&outputDir, "o", "./out", "输出目录，不带最后的 `/` 。为空则不保存文件。")
+	flag.StringVar(&outputDir, "o", "./out", "输出目录，不带最后的 `/` 。为空则不保存文件。默认路径为 `./out` 。")
 	flag.BoolVar(&verbose, "v", false, "显示证书的详细信息。")
 	flag.BoolVar(&exitPause, "pa", false, "写入文件前和执行完毕后暂停。如果第一个参数为 X509 证书文件路径（打开方式）则此项强制开启。")
 	flag.Parse()

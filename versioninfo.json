@@ -1,0 +1,43 @@
+{
+    "FixedFileInfo": {
+        "FileVersion": {
+            "Major": 1,
+            "Minor": 0,
+            "Patch": 0,
+            "Build": 0
+        },
+        "ProductVersion": {
+            "Major": 1,
+            "Minor": 0,
+            "Patch": 0,
+            "Build": 0
+        },
+        "FileFlagsMask": "3f",
+        "FileFlags ": "00",
+        "FileOS": "040004",
+        "FileType": "01",
+        "FileSubType": "00"
+    },
+    "StringFileInfo": {
+        "Comments": "This tool is used to split a certificate file containing multiple certificates into multiple separate certificate files, and name the files according to the certificate chain order and the subject name. It also supports being used as a certificate information viewer. 本工具用于将一个包含多个证书的证书文件拆分为多个单独的证书文件，并根据证书链顺序和使用者名称为文件命名。也支持作为证书信息查看器。",
+        "CompanyName": "Tongdy Sensing Technology Corporation",
+        "FileDescription": "This tool is used to split a certificate file containing multiple certificates into multiple separate certificate files, and name the files according to the certificate chain order and the subject name. It also supports being used as a certificate information viewer. 本工具用于将一个包含多个证书的证书文件拆分为多个单独的证书文件，并根据证书链顺序和使用者名称为文件命名。也支持作为证书信息查看器。",
+        "FileVersion": "1.0.0.0",
+        "InternalName": "SSLCertificateSplittingTool",
+        "LegalCopyright": "2024, Kagurazaka Yashi.",
+        "LegalTrademarks": "Tongdy",
+        "OriginalFilename": "main.exe",
+        "PrivateBuild": "",
+        "ProductName": "SSLCertificateSplittingTool",
+        "ProductVersion": "1.0.0.0",
+        "SpecialBuild": ""
+    },
+    "VarFileInfo": {
+        "Translation": {
+            "LangID": "0804",
+            "CharsetID": "04B0"
+        }
+    },
+    "IconPath": "icon.ico",
+    "ManifestPath": "main.exe.manifest"
+}
