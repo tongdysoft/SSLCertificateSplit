@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>SSL Certificate Splitting Tool</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.tongdy.sslcertificatesplittingtool</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleExecutable</key>
+    <string>SSLCertificateSplittingTool</string>
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
+</dict>
+</plist>

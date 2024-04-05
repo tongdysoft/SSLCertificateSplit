@@ -16,7 +16,8 @@ var (
 	x509s   []*x509.Certificate = []*x509.Certificate{}
 	lineStr string              = "----------"
 	// order   []int               = []int{}
-	x509xIndex []int
+	x509xIndex   []int
+	unreferenced []*x509.Certificate
 )
 
 // 讀取證書檔案
@@ -111,7 +112,7 @@ func processCertificates() {
 		}
 		fmt.Printf("[%d] %s%s %s (%d B)\n", i, strings.Repeat("  ", i), subso, cert.Subject, len(certs[d]))
 	}
-	var unreferenced []*x509.Certificate = findUnreferencedCerts(x509s, x509xIndex)
+	unreferenced = findUnreferencedCerts(x509s, x509xIndex)
 	if len(unreferenced) > 0 {
 		log.Println("警告：未链接的证书:")
 		for i, cert := range unreferenced {
@@ -133,21 +134,22 @@ func saveSubCertFile() {
 	for i, d := range x509xIndex {
 		var cert *x509.Certificate = x509s[d]
 		var subjects []string = strings.Split(cert.Subject.String(), ",")
+
+		if len(outputDir) > 0 {
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				err := os.Mkdir(outputDir, 0755)
+				if err != nil {
+					fmt.Println("错误：创建文件夹失败:", outputDir, err)
+					return
+				}
+			}
+		}
+
 		for _, subject := range subjects {
 			if len(subject) <= 3 {
 				continue
 			}
 			var subjectInfos []string = strings.Split(subject, "=")
-
-			if len(outputDir) > 0 {
-				if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-					err := os.Mkdir(outputDir, 0755)
-					if err != nil {
-						fmt.Println("错误：创建文件夹失败:", outputDir, err)
-						return
-					}
-				}
-			}
 
 			if subjectInfos[0] == "CN" {
 				var fileName string = fmt.Sprintf("%s/%d-%s.pem", outputDir, i, strings.ReplaceAll(subjectInfos[1], " ", "_"))

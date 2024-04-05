@@ -26,7 +26,6 @@ func main() {
 	flag.BoolVar(&verbose, "v", false, "显示证书的详细信息。")
 	flag.BoolVar(&exitPause, "pa", false, "写入文件前和执行完毕后暂停。如果第一个参数为 X509 证书文件路径（打开方式）则此项强制开启。")
 	flag.Parse()
-	fmt.Println(os.Args[1])
 
 	if len(os.Args) >= 2 && (strings.Contains(os.Args[1], ".")) {
 		certFilePath = os.Args[1]

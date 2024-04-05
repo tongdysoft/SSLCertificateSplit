@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=SSLCertificateSplittingTool
+GenericName=SSL Certificate Splitting Tool
+GenericName[zh_CN]=SSL 证书文件拆分工具
+GenericName[zh_TW]=SSL 證書檔案拆分工具
+Comment=This tool is used to split a certificate file containing multiple certificates into multiple separate certificate files, and name the files according to the certificate chain order and the subject name. It also supports being used as a certificate information viewer.
+Comment[zh_CN]=本工具用于将一个包含多个证书的证书文件拆分为多个单独的证书文件，并根据证书链顺序和使用者名称为文件命名。也支持作为证书信息查看器。
+Comment[zh_TW]=本工具用於將一個包含多個證書的證書檔案拆分為多個單獨的證書檔案，並根據證書鏈順序和使用者名稱為檔案命名。也支援作為證書資訊檢視器。
+Exec=./SSLCertificateSplittingTool -pa
+Terminal=true
+Icon=./icon.png
+Type=Application
+Categories=Tool
