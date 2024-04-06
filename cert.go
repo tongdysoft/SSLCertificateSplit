@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -16,8 +17,7 @@ var (
 	x509s   []*x509.Certificate = []*x509.Certificate{}
 	lineStr string              = "----------"
 	// order   []int               = []int{}
-	x509xIndex   []int
-	unreferenced []*x509.Certificate
+	x509xIndex []int = []int{}
 )
 
 // 讀取證書檔案
@@ -93,14 +93,17 @@ func processCertificates() {
 	var oldLen int
 	for i, cert := range x509s {
 		isOkN, x509xIndexN := sortCertificates(cert)
-		// fmt.Println("证书顺序:", i, isOkN, x509xIndexN)
+		if len(x509xIndexN) > 0 && x509xIndexN[0] != i && len(x509xIndexN) == len(x509s)-1 {
+			x509xIndexN = append([]int{i}, x509xIndexN...)
+		}
+		// fmt.Println("证书顺序:", i, isOkN, x509xIndexN, "基于:", cert.Subject)
 		if i == 0 || len(x509xIndexN) > oldLen {
 			oldLen = len(x509xIndexN)
 			x509xIndex = x509xIndexN
 			isOk = isOkN
 		}
 	}
-	if !isOk {
+	if len(x509s) == 0 || (!isOk && len(x509xIndex) != len(x509s)) {
 		log.Println("警告：证书文件不构成完整链。")
 	}
 	log.Println("证书链:")
@@ -112,7 +115,7 @@ func processCertificates() {
 		}
 		fmt.Printf("[%d] %s%s %s (%d B)\n", i, strings.Repeat("  ", i), subso, cert.Subject, len(certs[d]))
 	}
-	unreferenced = findUnreferencedCerts(x509s, x509xIndex)
+	unreferenced := findUnreferencedCerts(x509s, x509xIndex)
 	if len(unreferenced) > 0 {
 		log.Println("警告：未链接的证书:")
 		for i, cert := range unreferenced {
@@ -152,7 +155,8 @@ func saveSubCertFile() {
 			var subjectInfos []string = strings.Split(subject, "=")
 
 			if subjectInfos[0] == "CN" {
-				var fileName string = fmt.Sprintf("%s/%d-%s.pem", outputDir, i, strings.ReplaceAll(subjectInfos[1], " ", "_"))
+				var di string = strconv.Itoa(i)
+				var fileName string = fmt.Sprintf("%s/%s-%s.pem", outputDir, di, strings.ReplaceAll(subjectInfos[1], " ", "_"))
 				var info string = fmt.Sprintf("%s (%d B)", fileName, len(certs[d]))
 				if len(outputDir) > 0 {
 					err := os.WriteFile(fileName, certs[d], 0644)

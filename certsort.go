@@ -31,7 +31,7 @@ func sortCertificates(rootCert *x509.Certificate) (bool, []int) {
 	// var order []int
 	var x509xIndex []int = []int{}
 	var isOK bool = true
-	var endSub string = bytesMD5(rootCert.RawSubject) //bytesMD5(rootCert.RawSubject)
+	var endSub string = bytesMD5(rootCert.RawSubject)
 	var forMax = len(x509s) + 1
 	for m := 0; m < forMax; m++ {
 		for i, cert := range x509s {
