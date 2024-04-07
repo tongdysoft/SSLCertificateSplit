@@ -17,7 +17,9 @@ var (
 	x509s   []*x509.Certificate = []*x509.Certificate{}
 	lineStr string              = "----------"
 	// order   []int               = []int{}
-	x509xIndex []int = []int{}
+	x509xIndex        []int               = []int{}
+	unreferencedIndex []int               = []int{}
+	unreferenced      []*x509.Certificate = []*x509.Certificate{}
 )
 
 // 讀取證書檔案
@@ -115,11 +117,19 @@ func processCertificates() {
 		}
 		fmt.Printf("[%d] %s%s %s (%d B)\n", i, strings.Repeat("  ", i), subso, cert.Subject, len(certs[d]))
 	}
-	unreferenced := findUnreferencedCerts(x509s, x509xIndex)
+	unreferenced = findUnreferencedCerts(x509s, x509xIndex)
 	if len(unreferenced) > 0 {
 		log.Println("警告：未链接的证书:")
 		for i, cert := range unreferenced {
 			fmt.Println(i, cert.Subject)
+		}
+		for _, cert := range unreferenced {
+			for i, c := range x509s {
+				if cert == c {
+					unreferencedIndex = append(unreferencedIndex, i)
+					break
+				}
+			}
 		}
 	}
 
@@ -135,39 +145,49 @@ func processCertificates() {
 
 func saveSubCertFile() {
 	for i, d := range x509xIndex {
-		var cert *x509.Certificate = x509s[d]
-		var subjects []string = strings.Split(cert.Subject.String(), ",")
+		saveSubCertFileN(i, d, true)
+	}
+	for i, d := range unreferencedIndex {
+		saveSubCertFileN(i, d, false)
+	}
+}
 
-		if len(outputDir) > 0 {
-			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-				err := os.Mkdir(outputDir, 0755)
-				if err != nil {
-					fmt.Println("错误：创建文件夹失败:", outputDir, err)
-					return
-				}
+func saveSubCertFileN(i int, d int, n bool) {
+	var cert *x509.Certificate = x509s[d]
+	var subjects []string = strings.Split(cert.Subject.String(), ",")
+
+	if len(outputDir) > 0 {
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+			err := os.Mkdir(outputDir, 0755)
+			if err != nil {
+				fmt.Println("错误：创建文件夹失败:", outputDir, err)
+				return
 			}
 		}
+	}
 
-		for _, subject := range subjects {
-			if len(subject) <= 3 {
-				continue
+	for _, subject := range subjects {
+		if len(subject) <= 3 {
+			continue
+		}
+		var subjectInfos []string = strings.Split(subject, "=")
+
+		if subjectInfos[0] == "CN" {
+			var di string = strconv.Itoa(i)
+			if !n {
+				di = "N"
 			}
-			var subjectInfos []string = strings.Split(subject, "=")
-
-			if subjectInfos[0] == "CN" {
-				var di string = strconv.Itoa(i)
-				var fileName string = fmt.Sprintf("%s/%s-%s.pem", outputDir, di, strings.ReplaceAll(subjectInfos[1], " ", "_"))
-				var info string = fmt.Sprintf("%s (%d B)", fileName, len(certs[d]))
-				if len(outputDir) > 0 {
-					err := os.WriteFile(fileName, certs[d], 0644)
-					if err != nil {
-						log.Printf("错误：写入证书文件 %d: %s 失败: %v\n", i, info, err)
-					} else {
-						log.Printf("已写入证书文件 %d: %s\n", i, info)
-					}
+			var fileName string = fmt.Sprintf("%s/%s-%s.pem", outputDir, di, strings.ReplaceAll(subjectInfos[1], " ", "_"))
+			var info string = fmt.Sprintf("%s (%d B)", fileName, len(certs[d]))
+			if len(outputDir) > 0 {
+				err := os.WriteFile(fileName, certs[d], 0644)
+				if err != nil {
+					log.Printf("错误：写入证书文件 %d: %s 失败: %v\n", i, info, err)
+				} else {
+					log.Printf("已写入证书文件 %d: %s\n", i, info)
 				}
-				break
 			}
+			break
 		}
 	}
 }
