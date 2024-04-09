@@ -42,6 +42,37 @@ On the Windows operating system, you can directly open the certificate file with
 
 On non-Windows operating systems, you can run this tool through the command line. Before using it, please execute `chmod +x ./SSLCertificateSplit` to grant execution permissions.
 
+## Compilation
+
+1. Make sure that the GO environment has been installed and is not lower than the above version.
+2. Make sure that the following commands are installed on the system: `go`, `go generate`, `go build`, `openssl`, `7z` .
+3. Run `go get` in the current folder.
+4. Run the cross-platform compilation script:
+
+- Windows system (cmd): Run `build.bat` in the current folder.
+- Non-Windows system (bash): Run `chmod +x build.sh && ./build.sh` in the current folder.
+
+The compiled files are in the `./out/` folder.
+
+## Testing
+
+1. Make sure that the GO environment has been installed and is not lower than the above version.
+2. Make sure that the following commands are installed on the system: `go`, `go build`, `openssl` .
+3. Run `go get` in the current folder.
+4. Run the test script:
+
+- Windows system (cmd): Run `test.bat` in the current folder.
+- Non-Windows system (bash): Run `chmod +x test.sh && ./test.sh` in the current folder.
+
+The script will:
+
+- Generate 1 self-signed CA certificate.
+- Generate 3 self-signed intermediate certificates.
+- Generate 4 self-signed server certificates.
+- Compose the above certificates into a certificate chain.
+- Compile the code for the current platform.
+- Run this program to test each test certificate.
+
 ## License
 
 Copyright (c) 2024 KagurazakaYashi@Tongdy SSLCertificateSplittingTool is licensed under Mulan PSL v2. You can use this software according to the terms and conditions of the Mulan PSL v2. You may obtain a copy of Mulan PSL v2 at: http://license.coscl.org.cn/MulanPSL2 THIS SOFTWARE IS PROVIDED ON AN “AS IS” BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. See the Mulan PSL v2 for more details.
@@ -85,6 +116,37 @@ SSL 证书文件通常具有多个证书，例如：根证书、中间证书、�
 ### 非 Windows 系统
 
 在非 Windows 操作系统上，可以通过命令行运行该工具，在使用之前，请先执行 `chmod +x ./SSLCertificateSplit` 赋予执行权限。
+
+## 编译
+
+1. 确保已经安装了 GO 环境，并且不低于上述版本。
+2. 确保系统中已经安装了以下命令: `go`, `go generate`, `go build`, `openssl`, `7z` 。
+3. 在当前文件夹运行 `go get` 。
+4. 运行全平台编译脚本:
+
+- Windows 系统 (cmd): 在当前文件夹运行 `build.bat` 。
+- 非 Windows 系统 (bash): 在当前文件夹运行 `chmod +x build.sh && ./build.sh` 。
+
+编译后的文件在 `./out/` 文件夹中。
+
+## 测试
+
+1. 确保已经安装了 GO 环境，并且不低于上述版本。
+2. 确保系统中已经安装了以下命令: `go`, `go build`, `openssl` 。
+3. 在当前文件夹运行 `go get` 。
+4. 运行测试脚本:
+
+- Windows 系统 (cmd): 在当前文件夹运行 `test.bat` 。
+- 非 Windows 系统 (bash): 在当前文件夹运行 `chmod +x test.sh && ./test.sh` 。
+
+脚本将:
+
+- 生成 1 个自签名 CA 证书。
+- 生成 3 个自签名 中间证书。
+- 生成 4 个自签名 服务器证书。
+- 将上述证书组成证书链。
+- 为当前平台编译代码。
+- 运行本程序测试每一个测试证书。
 
 ## 许可证
 
